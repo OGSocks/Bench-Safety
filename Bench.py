@@ -6,6 +6,7 @@ import Adafruit_CharLCD as LCD
 
 #LCD pin initializations
 REFRESH_TIME = 1.0
+lcd = display.lcd
 lcd_rs =
 lcd_en =
 lcd_d4 =
@@ -44,30 +45,15 @@ def get_Users():
         users[line[0]] = line[1]
     return users
 
-def get_pulse_time0():
-    trig0.on()
+def get_pulse_time():
+    trig.on()
     sleep(0.00001)
-    trig0.off()
+    trig.off()
 
-    while echo0.is_active == False:
+    while echo.is_active == False:
         pulse_start = time()
 
-    while echo0.is_active == True:
-        pulse_end = time()
-
-    sleep(0.06)
-
-    return pulse_end - pulse_start
-
-def get_pulse_time1():
-    trig1.on()
-    sleep(0.00001)
-    trig1.off()
-
-    while echo1.is_active == False:
-        pulse_start = time()
-
-    while echo1.is_active == True:
+    while echo.is_active == True:
         pulse_end = time()
 
     sleep(0.06)
@@ -83,11 +69,20 @@ def calculate_velocity(d0,d1,old_d0,old_d1,last_read):
     v0 = (d0-old_d0)/(last_read-lastTime)
     v1 = (d1-old_d1)/(last_read-lastTime)
     return (v0+v1)/2
+    
 
-def calculate_acceleration(v0, v1, now):
-    return (v1-v0)/(now-lastTime)
-
-
+def read_user_average(userfile):
+    with open(userfile) as ins:
+    array = []
+    avg_reps = 
+    for line in ins:
+        line.strip()
+        array.append(line) # not sure if this is correct, but I want to append everything in the line to include historical user's data in array
+        summation = sum(array)
+        avg_reps = summation/len(array)
+        
+        
+    
 while True:
     lcd.enable_display(True)
     users = get_Users()
@@ -131,47 +126,27 @@ while True:
                 lcd.message("Incorrect char for weight")
                 weight_str = ""
 
-    duration = get_pulse_time0()
+    duration = get_pulse_time()
     dist0_orig = calculate_distance(duration)
     print(dist0_orig)
-    duration = get_pulse_time1()
+    duration = get_pulse_time()
     dist1_orig = calculate_distance(duration)
     last_dist0 = dist0_orig
     last_dist1 = dist1_orig
     lastTime = time()
     v_last = 0
     lift_error = 0
-    direction = 0 # 1 for up, 0 for down
-    stuck = 0
     while True:
-        sleep(.05)
-        duration = get_pulse_time0()
+        duration = get_pulse_time()
         dist0 = calculate_distance(duration)
-        duration = get_pulse_time1()
+        duration = get_pulse_time()
         dist1 = calculate_distance(duration)
         now = time()
         v_now = calculate_velocity(dist0,dist1,last_dist0,last_dist1,now)
-        accel = calculate_acceleration(v_last, v_now, now)
-        lastTime = now
-        if accel <= -9:
-            lift_bars()
-            lift_error = 2
-            break
-        elif abs(dist0 - dist1) > .2:
+        if abs(dist0 - dist1) > .1:
             lift_bars()
             lift_error = 1
             break
         elif last_dist0 > dist0 and last_dist1 > dist1:
-            stuck = 0
-            if direction == 1:
-                reps++
-            direction = 0
-        elif last_dist0 < dist0 and last_dist1 < dist1:
-            stuck = 0
-            direction = 1
-        elif abs(dist0-last_dist0) < .1 and abs(dist1-last_dist1) < .1:
-            if stuck:
-                lift_bars()
-                lift_error = 3
-                break
-            stuck = 1
+            
+            reps += 1
