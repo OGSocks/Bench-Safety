@@ -6,7 +6,6 @@ import Adafruit_CharLCD as LCD
 
 #LCD pin initializations
 REFRESH_TIME = 1.0
-lcd = display.lcd
 lcd_rs =
 lcd_en =
 lcd_d4 =
@@ -45,15 +44,30 @@ def get_Users():
         users[line[0]] = line[1]
     return users
 
-def get_pulse_time():
-    trig.on()
+def get_pulse_time0():
+    trig0.on()
     sleep(0.00001)
-    trig.off()
+    trig0.off()
 
-    while echo.is_active == False:
+    while echo0.is_active == False:
         pulse_start = time()
 
-    while echo.is_active == True:
+    while echo0.is_active == True:
+        pulse_end = time()
+
+    sleep(0.06)
+
+    return pulse_end - pulse_start
+
+def get_pulse_time1():
+    trig1.on()
+    sleep(0.00001)
+    trig1.off()
+
+    while echo1.is_active == False:
+        pulse_start = time()
+
+    while echo1.is_active == True:
         pulse_end = time()
 
     sleep(0.06)
@@ -69,7 +83,9 @@ def calculate_velocity(d0,d1,old_d0,old_d1,last_read):
     v0 = (d0-old_d0)/(last_read-lastTime)
     v1 = (d1-old_d1)/(last_read-lastTime)
     return (v0+v1)/2
-    
+
+def calculate_acceleration(v0, v1, now):
+    return (v1-v0)/(now-lastTime)
 
 def read_user_average(userfile):
     with open(userfile) as ins:
@@ -126,27 +142,47 @@ while True:
                 lcd.message("Incorrect char for weight")
                 weight_str = ""
 
-    duration = get_pulse_time()
+    duration = get_pulse_time0()
     dist0_orig = calculate_distance(duration)
     print(dist0_orig)
-    duration = get_pulse_time()
+    duration = get_pulse_time1()
     dist1_orig = calculate_distance(duration)
     last_dist0 = dist0_orig
     last_dist1 = dist1_orig
     lastTime = time()
     v_last = 0
     lift_error = 0
+    direction = 0 # 1 for up, 0 for down
+    stuck = 0
     while True:
-        duration = get_pulse_time()
+        sleep(.05)
+        duration = get_pulse_time0()
         dist0 = calculate_distance(duration)
-        duration = get_pulse_time()
+        duration = get_pulse_time1()
         dist1 = calculate_distance(duration)
         now = time()
         v_now = calculate_velocity(dist0,dist1,last_dist0,last_dist1,now)
-        if abs(dist0 - dist1) > .1:
+        accel = calculate_acceleration(v_last, v_now, now)
+        lastTime = now
+        if accel <= -9:
+            lift_bars()
+            lift_error = 2
+            break
+        if abs(dist0 - dist1) > .2:
             lift_bars()
             lift_error = 1
             break
         elif last_dist0 > dist0 and last_dist1 > dist1:
-            
-            reps += 1
+            stuck = 0
+            if direction == 1:
+                reps++
+            direction = 0
+        elif last_dist0 < dist0 and last_dist1 < dist1:
+            stuck = 0
+            direction = 1
+        elif abs(dist0-last_dist0) < .1 and abs(dist1-last_dist1) < .1:
+            if stuck:
+                lift_bars()
+                lift_error = 3
+                break
+            stuck = 1
