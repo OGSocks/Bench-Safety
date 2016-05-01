@@ -19,16 +19,23 @@ lcd_rows = 2
 # Initialize the LCD using the pins above.
 lcd = LCD.Adafruit_CharLCD(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6, lcd_d7, lcd_columns, lcd_rows, lcd_backlight)
 
-userFile = "BenchUsers.txt"
+#Range finder inits
 trig0 = OutputDevice()
 echo0= InputDevice()
 trig1 = OutputDevice()
 echo1 = InputDevice()
+
+#Other inits
+led = LED()
+bar_up = 0
+userFile = "BenchUsers.txt"
 reps = 0
 prev = -1
 weight = 0
 lastTime = time()
 user_id = ""
+end_screen = []
+end_page = 0
 
 userFlag = False
 weightFlag = False
@@ -41,8 +48,18 @@ def get_Users():
     for line in f:
         line = line.strip()
         line = line.split("|")
+        line[1] = line[1].split(",")
         users[line[0]] = line[1]
+    f.close()
     return users
+    
+def update_file():
+    users[user_id][-1] = reps
+    users[user_id][-2] = weight
+    f = open(userFile, "w")
+    for user in users.keys:
+        f.write(user + "|" + users[user][0] + "," + users[user][1] + "," + users[user][2])
+    f.close()
 
 def get_pulse_time0():
     trig0.on()
@@ -96,8 +113,54 @@ def read_user_average(userfile):
         array.append(line) # not sure if this is correct, but I want to append everything in the line to include historical user's data in array
         summation = sum(array)
         avg_reps = summation/len(array)
-        
-        
+
+def lift_bars():
+    led.on()
+    bar_up = 1
+
+def lower_bars():
+    led.off()
+    bar_up = 0
+
+def end_screen_init():
+    end_screen[0] = "A:last page \n D:next page"
+    end_screen[1] = "ENTER: lower bars and exit"
+    end_screen[2] = "Completed " + reps + " reps at " + weight + " lbs"
+    end_screen[3] = "Completed " + users[user_id][-1] + " reps at " + users[user_id][-2] + " lbs"
+    
+def screen_back():
+    if end_page == 0:
+        end_page = 2
+    else:
+        end_page--
+
+def screen_forward()
+    if end_page == 2:
+        end_page = 0
+    else:
+        end_page++
+
+def display_end():
+    lcd.clear()
+    if end_page == 2:
+        lcd.message("Current session results")
+        sleep(1)
+        lcd.clear()
+    elif end_page == 3:
+        lcd.message("Last session results")
+        sleep(1)
+        lcd.clear()
+    lcd.message(end_screen[end_page])
+    
+def cleanup():
+    bar_up = 0
+    reps = 0
+    prev = -1
+    weight = 0
+    user_id = ""
+    end_page = 0
+    userFlag = False
+    weightFlag = False
     
 while True:
     lcd.enable_display(True)
@@ -105,12 +168,12 @@ while True:
     while not userFlag:
         lcd.clear()
         lcd.message("Please enter your user ID: " + user_id)
-        ui = readchar.readchar()
+        ui = readchar.readkey()
         now = time()
         while now - lastTime < REFRESH_TIME:
             sleep(.5)
             now = time()
-        if ui != "\n":
+        if ui != readchar.keys.ENTER:
             user_id += ui
         else:
             if user_id in users:
@@ -120,18 +183,18 @@ while True:
                 lcd.message("Incorrect User ID")
                 user_id = ""
     lcd.clear()
-    lcd.message("Hello " + users[user_id])
+    lcd.message("Hello " + users[user_id][0])
     sleep(3)
     while not weightFlag:
         weight_str = ""
         lcd.clear()
         lcd.message("Please enter bar weight: " + weight)
-        bi = readchar.readchar()
+        bi = readchar.readkey()
         now = time()
         while now - lastTime < REFRESH_TIME:
             sleep(.5)
             now = time()
-        if bi != "\n" and bi.isdigit():
+        if bi != readchar.key.ENTER and bi.isdigit():
             weight_str += bi
         else:
             if weight_str.isdigit():
@@ -186,3 +249,25 @@ while True:
                 lift_error = 3
                 break
             stuck = 1
+    while bar_up:
+        end_screen_init()
+        lcd.clear()
+        lcd.message("Completed " + reps + " reps!")
+        sleep(2)
+        ei = readchar.readkey()
+        while True:
+            display_end()
+            ei = readchar.readkey()
+            now = time()
+            while now - lastTime < REFRESH_TIME:
+                sleep(.5)
+                now = time()
+            if ei == "a":
+                screen_back()
+            elif ei == "d":
+                screen_forward()
+            elif ei == readchar.keys.ENTER:
+                lower_bars()
+                break
+    update_file()
+    cleanup()
