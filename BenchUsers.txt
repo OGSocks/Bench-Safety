@@ -1,2 +1,2 @@
-0001|Test User
-5696|Kyle Marshall
+0001|Test User,0,0
+5696|Kyle Marshall,0,0
