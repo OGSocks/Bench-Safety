@@ -6,13 +6,13 @@ import Adafruit_CharLCD as LCD
 
 #LCD pin initializations
 REFRESH_TIME = 1.0
-lcd_rs =
-lcd_en =
-lcd_d4 =
-lcd_d5 =
-lcd_d6 =
-lcd_d7 =
-lcd_backlight =
+lcd_rs = 27
+lcd_en = 22
+lcd_d4 = 25
+lcd_d5 = 24
+lcd_d6 = 23
+lcd_d7 = 18
+lcd_backlight = 4
 #set lcd size for 16x2
 lcd_columns = 16
 lcd_rows = 2
@@ -20,13 +20,13 @@ lcd_rows = 2
 lcd = LCD.Adafruit_CharLCD(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6, lcd_d7, lcd_columns, lcd_rows, lcd_backlight)
 
 #Range finder inits
-trig0 = OutputDevice()
-echo0= InputDevice()
-trig1 = OutputDevice()
-echo1 = InputDevice()
+trig0 = OutputDevice(5)
+echo0= InputDevice(6)
+trig1 = OutputDevice(12)
+echo1 = InputDevice(13)
 
 #Other inits
-led = LED()
+led = LED(16)
 bar_up = 0
 userFile = "BenchUsers.txt"
 reps = 0
