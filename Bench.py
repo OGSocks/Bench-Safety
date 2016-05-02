@@ -153,51 +153,37 @@ def cleanup():
     weightFlag = False
     
 while True:
-    lcd.enable_display(True)
+    #lcd.enable_display(True)
     users = get_Users()
     while not userFlag:
-        lcd.clear()
-        lcd.message("Please enter your user ID: " + user_id)
-        ui = readchar.readkey()
-        now = time()
-        while now - lastTime < REFRESH_TIME:
-            sleep(.5)
-            now = time()
-        if ui != " ":
-            user_id += ui
+        #lcd.clear()
+        #lcd.message("Please enter your user ID: " + user_id)
+        user_id = input("Please enter your user ID: ")
+        if user_id in users:
+            userFlag = 1
         else:
-            if user_id in users:
-                userFlag = 1
-            else:
-                lcd.clear()
-                lcd.message("Incorrect User ID")
-                user_id = ""
-    lcd.clear()
-    lcd.message("Hello " + users[user_id][0])
-    sleep(3)
+            lcd.clear()
+            lcd.message("Incorrect User ID")
+            user_id = ""
+    #lcd.clear()
+    #lcd.message("Hello " + users[user_id][0])
+    #sleep(3)
+    print('Hello ' + users[user_id][0])
     while not weightFlag:
-        weight_str = ""
-        lcd.clear()
-        lcd.message("Please enter bar weight: " + weight)
-        bi = readchar.readkey()
-        now = time()
-        while now - lastTime < REFRESH_TIME:
-            sleep(.5)
-            now = time()
-        if bi != " " and bi.isdigit():
-            weight_str += bi
+        weight_str = input('Please enter bar weight: ')
+        #lcd.clear()
+        #lcd.message("Please enter bar weight: " + weight)
+        #bi = readchar.readkey()
+        if weight_str.isdigit():
+            weight = int(weight_str)
+            weightFlag = 1
         else:
-            if weight_str.isdigit():
-                weight = int(weight_str)
-                weightFlag = 1
-            else:
-                lcd.clear()
-                lcd.message("Incorrect char for weight")
-                weight_str = ""
+            lcd.clear()
+            lcd.message("Incorrect char for weight")
+            weight_str = ""
 
     duration = get_pulse_time0()
     dist0_orig = calculate_distance(duration)
-    print(dist0_orig)
     duration = get_pulse_time1()
     dist1_orig = calculate_distance(duration)
     last_dist0 = dist0_orig
@@ -241,23 +227,29 @@ while True:
             stuck = 1
     while bar_up:
         end_screen_init()
-        lcd.clear()
-        lcd.message("Completed " + reps + " reps!")
-        sleep(2)
-        ei = readchar.readkey()
-        while True:
-            display_end()
-            ei = readchar.readkey()
-            now = time()
-            while now - lastTime < REFRESH_TIME:
-                sleep(.5)
-                now = time()
-            if ei == "a":
-                screen_back()
-            elif ei == "d":
-                screen_forward()
-            elif ei == " ":
-                lower_bars()
-                break
+        #lcd.clear()
+        #lcd.message("Completed " + reps + " reps!")
+        #sleep(2)
+        if lift_error != 0:
+            print('Bar raised for safety purposes')
+        print('Completed ' + str(reps) + ' reps!')
+        print("Today you completed " + reps + " reps at " + weight + " lbs")
+        print("Last time you completed " + users[user_id][-1] + " reps at " + users[user_id][-2] + " lbs")
+        #while True:
+            #display_end()
+            #ei = readchar.readkey()
+            #now = time()
+            #while now - lastTime < REFRESH_TIME:
+                #sleep(.5)
+                #now = time()
+            #if ei == "a":
+                #screen_back()
+            #elif ei == "d":
+                #screen_forward()
+            #elif ei == " ":
+                #lower_bars()
+                #break
+        tmp = input("Press enter to lower bars and exit")
+        lower_bars()
     update_file()
     cleanup()
