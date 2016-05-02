@@ -104,16 +104,6 @@ def calculate_velocity(d0,d1,old_d0,old_d1,last_read):
 def calculate_acceleration(v0, v1, now):
     return (v1-v0)/(now-lastTime)
 
-def read_user_average(userfile):
-    with open(userfile) as ins:
-    array = []
-    avg_reps = 
-    for line in ins:
-        line.strip()
-        array.append(line) # not sure if this is correct, but I want to append everything in the line to include historical user's data in array
-        summation = sum(array)
-        avg_reps = summation/len(array)
-
 def lift_bars():
     led.on()
     bar_up = 1
@@ -124,7 +114,7 @@ def lower_bars():
 
 def end_screen_init():
     end_screen[0] = "A:last page \n D:next page"
-    end_screen[1] = "ENTER: lower bars and exit"
+    end_screen[1] = "SPACE: lower bars and exit"
     end_screen[2] = "Completed " + reps + " reps at " + weight + " lbs"
     end_screen[3] = "Completed " + users[user_id][-1] + " reps at " + users[user_id][-2] + " lbs"
     
@@ -132,13 +122,13 @@ def screen_back():
     if end_page == 0:
         end_page = 2
     else:
-        end_page--
+        end_page-=1
 
 def screen_forward()
     if end_page == 2:
         end_page = 0
     else:
-        end_page++
+        end_page+=1
 
 def display_end():
     lcd.clear()
@@ -173,7 +163,7 @@ while True:
         while now - lastTime < REFRESH_TIME:
             sleep(.5)
             now = time()
-        if ui != readchar.keys.ENTER:
+        if ui != " ":
             user_id += ui
         else:
             if user_id in users:
@@ -194,7 +184,7 @@ while True:
         while now - lastTime < REFRESH_TIME:
             sleep(.5)
             now = time()
-        if bi != readchar.key.ENTER and bi.isdigit():
+        if bi != " " and bi.isdigit():
             weight_str += bi
         else:
             if weight_str.isdigit():
@@ -238,7 +228,7 @@ while True:
         elif last_dist0 > dist0 and last_dist1 > dist1:
             stuck = 0
             if direction == 1:
-                reps++
+                reps+=1
             direction = 0
         elif last_dist0 < dist0 and last_dist1 < dist1:
             stuck = 0
@@ -266,7 +256,7 @@ while True:
                 screen_back()
             elif ei == "d":
                 screen_forward()
-            elif ei == readchar.keys.ENTER:
+            elif ei == " ":
                 lower_bars()
                 break
     update_file()
